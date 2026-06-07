@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Neural Network Matrix Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- MathJax for rendering matrix transformation equations -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020204; color: #e4e4e7; }
+        .heading-font { font-family: 'Space Grotesk', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="min-h-screen bg-[#020204] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/20 via-zinc-950 to-black">
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Dashboard Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-zinc-800 pb-5">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-purple-400 font-mono"><i class="fa-solid fa-brain mr-1"></i> Deep Learning Compute Desk</span>
+                <h1 class="text-3xl font-bold text-white heading-font mt-1 tracking-tight">Neural Network Matrix <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">& Forward Propagation Engine</span></h1>
+                <p class="text-sm text-zinc-400 mt-1">Interactive linear tensor maps, multi-activation algebraic scaling, and weight matrix diagnostics.</p>
+            </div>
+            <div class="flex items-center gap-3 bg-zinc-900/80 border border-zinc-800 rounded-full px-4 py-2 backdrop-blur-sm">
+                <div class="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" id="engineStateDot"></div>
+                <span class="text-xs font-mono font-bold tracking-wider text-zinc-300">CORE STATUS: INFERENCE_READY</span>
+            </div>
+        </header>
+
+        <!-- Technical Tensor Formula Header Widget -->
+        <div class="bg-zinc-900/30 border border-zinc-800/80 rounded-xl p-3 mb-6 font-mono text-xs flex flex-col lg:flex-row items-center justify-between gap-4">
+            <div class="text-zinc-400">
+                <i class="fa-solid fa-square-root-variable text-purple-400 mr-1.5"></i> 
+                <strong>Layer Transformation Rule:</strong> Layer output arrays are computed using dot-product matrix multiplication capped by vector bounds:
+            </div>
+            <div class="text-purple-400 bg-black/40 px-4 py-1.5 rounded-lg border border-zinc-800/60 text-center">
+                $$a^{(l)} = \sigma\left( W^{(l)} \cdot a^{(l-1)} + b^{(l)} \right)$$
+            </div>
+        </div>
+
+        <!-- Dashboard Layout Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Left Config Weights Adjustments Panel -->
+            <div class="lg:col-span-1 flex flex-col gap-6">
+                <!-- Vector Inputs & Activation Selection -->
+                <div class="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 backdrop-blur-md">
+                    <h2 class="text-base font-semibold text-white heading-font mb-4 flex items-center gap-2"><i class="fa-solid fa-sliders text-purple-400"></i> Hyperparameters & Inputs</h2>
+                    
+                    <div class="space-y-4">
+                        <!-- Input Tensor Sliders -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] font-mono text-zinc-400 block mb-1 uppercase">Input Vector $x_1$</label>
+                                <input type="range" id="inputX1" min="-2" max="2" step="0.1" value="0.8" class="w-full accent-purple-500 bg-zinc-950 h-1.5 rounded-lg appearance-none cursor-pointer" oninput="runForwardPropagationPass()">
+                                <div class="text-right text-xs font-mono text-purple-400 mt-1" id="valX1">0.8</div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-mono text-zinc-400 block mb-1 uppercase">Input Vector $x_2$</label>
+                                <input type="range" id="inputX2" min="-2" max="2" step="0.1" value="-0.5" class="w-full accent-purple-500 bg-zinc-950 h-1.5 rounded-lg appearance-none cursor-pointer" oninput="runForwardPropagationPass()">
+                                <div class="text-right text-xs font-mono text-purple-400 mt-1" id="valX2">-0.5</div>
+                            </div>
+                        </div>
+
+                        <!-- Activation Strategy Picker -->
+                        <div>
+                            <label class="text-[10px] font-mono text-zinc-400 block mb-1.5 uppercase">Activation Scaling Target ($\sigma$)</label>
+                            <select id="activationSelect" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 font-mono" onchange="runForwardPropagationPass()">
+                                <option value="sigmoid">Sigmoid ➔ 1 / (1 + e^-z)</option>
+                                <option value="relu">ReLU ➔ max(0, z)</option>
+                                <option value="tanh">Tanh ➔ tanh(z)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matrix Weights Array Adjustments Card -->
+                <div class="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 backdrop-blur-md flex-1">
+                    <h2 class="text-base font-semibold text-white heading-font mb-4 flex items-center gap-2"><i class="fa-solid fa-network-wired text-cyan-400"></i> Tensor Weight Arrays</h2>
+                    
+                    <div class="space-y-4 max-h-[320px] overflow-y-auto pr-1 no-scrollbar">
+                        <div>
+                            <span class="text-[10px] font-mono text-zinc-500 block mb-2 uppercase border-b border-zinc-800 pb-1">Hidden Layer Matrix ($W^{(1)}$ weights)</span>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="flex justify-between text-[11px] font-mono mb-0.5 text-zinc-400"><span>W11 (Input 1 ➔ Hidden 1)</span><span id="w11Val" class="text-cyan-400">0.5</span></div>
+                                    <input type="range" id="sliderW11" min="-2" max="2" step="0.1" value="0.5" class="w-full accent-cyan-500 bg-zinc-950 h-1 rounded-lg appearance-none cursor-pointer" oninput="runForwardPropagationPass()">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-[11px] font-mono mb-0.5 text-zinc-400"><span>W21 (Input 2 ➔ Hidden 1)</span><span id="w21Val" class="text-cyan-400">-0.8</span></div>
+                                    <input type="range" id="sliderW21" min="-2" max="2" step="0.1" value="-0.8" class="w-full accent-cyan-500 bg-zinc-950 h-1 rounded-lg appearance-none cursor-pointer" oninput="runForwardPropagationPass()">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-[11px] font-mono mb-0.5 text-zinc-400"><span>W12 (Input 1 ➔ Hidden 2)</span><span id="w12Val" class="text-cyan-400">1.2</span></div>
+                                    <input type="range" id="sliderW12" min="-2" max="2" step="0.1" value="1.2" class="w-full accent-cyan-500 bg-zinc-950 h-1 rounded-lg appearance-none cursor-pointer" oninput="runForwardPropagationPass()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <span class="text-[10px] font-mono text-zinc-500 block mb-2 uppercase border-b border-zinc-800 pb-1">Output Layer Matrix ($W^{(2)}$ weights)</span>
+                            <div>
+                                <div class="flex justify-between text-[11px] font-mono mb-0.5 text-zinc-400"><span>Wout1 (Hidden 1 ➔ Output)</span><span id="wout1Val" class="text-purple-400">0.7</span></div>
+                                <input type="range" id="sliderWout1" min="-2" max="2" step="0.1" value="0.7" class="w-full accent-purple-500 bg-zinc-950 h-1 rounded-lg appearance-none cursor-pointer" oninput="runForwardPropagationPass()">
+                            </div>
+                        </div>
+
+                        <button onclick="randomizeTensorFields()" class="w-full mt-2 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-300 py-2 rounded-xl text-xs font-mono transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-shuffle text-cyan-400"></i> Randomize Weight Coefficients
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Topology Visualizer and Mathematical Trace Column -->
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                <!-- Topological Graph Display Panel -->
+                <div class="bg-zinc-900/20 border border-zinc-800/80 rounded-2xl p-6 backdrop-blur-md">
+                    <h2 class="text-base font-semibold text-white heading-font mb-4 flex items-center gap-2"><i class="fa-solid fa-circle-nodes text-purple-400"></i> Network Active Firing Topology</h2>
+                    
+                    <!-- Core Visual Node Architecture Map -->
+                    <div class="grid grid-cols-3 gap-4 items-center justify-center py-6 relative bg-black/40 border border-zinc-800 rounded-xl min-h-[260px]">
+                        
+                        <!-- Input Node Vector Stack -->
+                        <div class="flex flex-col items-center gap-12 z-10">
+                            <span class="text-[9px] font-mono text-zinc-500 font-bold uppercase tracking-wider absolute top-3 left-6">Input Matrix</span>
+                            <div class="w-14 h-14 bg-zinc-950 border-2 border-purple-500/80 rounded-full flex flex-col items-center justify-center font-mono shadow-lg transition-all duration-300" id="nodeX1">
+                                <span class="text-[10px] text-zinc-400">x1</span>
+                                <span class="text-xs font-bold text-white" id="nodeX1Val">0.00</span>
+                            </div>
+                            <div class="w-14 h-14 bg-zinc-950 border-2 border-purple-500/80 rounded-full flex flex-col items-center justify-center font-mono shadow-lg transition-all duration-300" id="nodeX2">
+                                <span class="text-[10px] text-zinc-400">x2</span>
+                                <span class="text-xs font-bold text-white" id="nodeX2Val">0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Hidden Layer Node Vector Stack -->
+                        <div class="flex flex-col items-center gap-6 z-10">
+                            <span class="text-[9px] font-mono text-zinc-500 font-bold uppercase tracking-wider absolute top-3 left-1/3">Hidden Matrix</span>
+                            <div class="w-14 h-14 bg-zinc-950 border-2 border-zinc-700 rounded-full flex flex-col items-center justify-center font-mono shadow-lg transition-all duration-300" id="nodeH1">
+                                <span class="text-[10px] text-zinc-500">h1</span>
+                                <span class="text-xs font-bold text-white" id="nodeH1Val">0.00</span>
+                            </div>
+                            <div class="w-14 h-14 bg-zinc-950 border-2 border-zinc-700 rounded-full flex flex-col items-center justify-center font-mono shadow-lg transition-all duration-300" id="nodeH2">
+                                <span class="text-[10px] text-zinc-500">h2</span>
+                                <span class="text-xs font-bold text-white" id="nodeH2Val">0.00</span>
+                            </div>
+                            <div class="w-14 h-14 bg-zinc-950 border-2 border-zinc-700 rounded-full flex flex-col items-center justify-center font-mono shadow-lg transition-all duration-300" id="nodeH3">
+                                <span class="text-[10px] text-zinc-500">h3</span>
+                                <span class="text-xs font-bold text-white" id="nodeH3Val">0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Output Target Node Vector Stack -->
+                        <div class="flex flex-col items-center z-10">
+                            <span class="text-[9px] font-mono text-zinc-500 font-bold uppercase tracking-wider absolute top-3 right-6">Output Vector</span>
+                            <div class="w-16 h-16 bg-zinc-950 border-2 border-cyan-400 rounded-full flex flex-col items-center justify-center font-mono shadow-2xl transition-all duration-300" id="nodeOut">
+                                <span class="text-[10px] text-cyan-400">y_hat</span>
+                                <span class="text-sm font-bold text-cyan-400 animate-pulse" id="nodeOutVal">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Linear Algebra Vector Transformation Equations Matrix Card -->
+                <div class="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 font-mono text-xs">
+                    <span class="text-zinc-500 uppercase block mb-3 font-bold tracking-wider">Dynamic Dot-Product Transformation Ledger:</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-950/80 border border-zinc-800/60 rounded-xl p-4 min-h-[80px]">
+                        <div class="border-r border-zinc-800/60 pr-2">
+                            <div class="text-[10px] text-zinc-500 font-bold uppercase mb-1">Hidden Node $h_1$ Net Activation Input ($z_1$):</div>
+                            <div class="text-zinc-300 text-xs tracking-wide" id="formulaH1">z1 = (x1 * W11) + (x2 * W21) = ...</div>
+                        </div>
+                        <div class="pl-1">
+                            <div class="text-[10px] text-zinc-500 font-bold uppercase mb-1">Output Node $\hat{y}$ Scaled Resolution:</div>
+                            <div class="text-cyan-400 text-xs tracking-wide" id="formulaOut">y = \sigma(h1 * Wout1) = ...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Core Mathematical Scalar Operations Logic mapping formulas
+        function activateScalar(z, strategy) {
+            if (strategy === 'relu') return Math.max(0, z);
+            if (strategy === 'tanh') return Math.tanh(z);
+            return 1 / (1 + Math.exp(-z)); // Defaults to Sigmoid mathematical distribution boundary
+        }
+
+        function runForwardPropagationPass() {
+            // Pull tracking scalar inputs from range DOM inputs
+            const x1 = parseFloat(document.getElementById('inputX1').value);
+            const x2 = parseFloat(document.getElementById('inputX2').value);
+            const strategy = document.getElementById('activationSelect').value;
+
+            // Update parameters numerical text tags indicators
+            document.getElementById('valX1').innerText = x1.toFixed(1);
+            document.getElementById('valX2').innerText = x2.toFixed(1);
+
+            document.getElementById('nodeX1Val').innerText = x1.toFixed(2);
+            document.getElementById('nodeX2Val').innerText = x2.toFixed(2);
+
+            // Pull matrix scaling weights coefficients boundaries controls values
+            const w11 = parseFloat(document.getElementById('sliderW11').value);
+            const w21 = parseFloat(document.getElementById('sliderW21').value);
+            const w12 = parseFloat(document.getElementById('sliderW12').value);
+            const wout1 = parseFloat(document.getElementById('sliderWout1').value);
+
+            document.getElementById('w11Val').innerText = w11.toFixed(1);
+            document.getElementById('w21Val').innerText = w21.toFixed(1);
+            document.getElementById('w12Val').innerText = w12.toFixed(1);
+            document.getElementById('wout1Val').innerText = wout1.toFixed(1);
+
+            // Step 1 Calculations: Linear transform dot array paths for Hidden Nodes
+            // Mock static defaults for missing visual indices parameters to maintain grid balance bounds
+            const z1 = (x1 * w11) + (x2 * w21);
+            const h1 = activateScalar(z1, strategy);
+
+            const z2 = (x1 * w12) + (x2 * 0.4);
+            const h2 = activateScalar(z2, strategy);
+
+            const z3 = (x1 * -0.5) + (x2 * 0.9);
+            const h3 = activateScalar(z3, strategy);
+
+            // Print text metrics mappings properties values blocks indicators
+            document.getElementById('nodeH1Val').innerText = h1.toFixed(2);
+            document.getElementById('nodeH2Val').innerText = h2.toFixed(2);
+            document.getElementById('nodeH3Val').innerText = h3.toFixed(2);
+
+            // Step 2 Calculations: Compute output nodes linear combinations mapping
+            const zOut = (h1 * wout1) + (h2 * -0.6) + (h3 * 0.2);
+            const yHat = activateScalar(zOut, strategy);
+
+            document.getElementById('nodeOutVal').innerText = yHat.toFixed(2);
+
+            // Inject detailed mathematical trace strings layouts directly into ledger nodes strings bounds
+            document.getElementById('formulaH1').innerHTML = `
+                z₁ = (${x1.toFixed(1)} × ${w11.toFixed(1)}) + (${x2.toFixed(1)} × ${w21.toFixed(1)})<br>
+                z₁ = <strong>${z1.toFixed(3)}</strong><br>
+                h₁ = σ(z₁) = <span class="text-purple-400"><strong>${h1.toFixed(3)}</strong></span>
+            `;
+
+            document.getElementById('formulaOut').innerHTML = `
+                z_out = (${h1.toFixed(2)} × ${wout1.toFixed(1)}) + (${h2.toFixed(2)} × -0.6) + ...<br>
+                z_out = <strong>${zOut.toFixed(3)}</strong><br>
+                ŷ = σ(z_out) = <span class="text-cyan-400"><strong>${yHat.toFixed(3)}</strong></span>
+            `;
+
+            // Dynamically alter node glow boundaries based on node vector firing intensity levels
+            modifyNodeGlow('nodeH1', h1);
+            modifyNodeGlow('nodeH2', h2);
+            modifyNodeGlow('nodeH3', h3);
+            modifyNodeGlow('nodeOut', yHat);
+        }
+
+        function modifyNodeGlow(elementId, intensityValue) {
+            const targetElement = document.getElementById(elementId);
+            // Cap visual normalization bounds values between 0 and 1
+            const normalizedIntensity = Math.min(1, Math.max(0, Math.abs(intensityValue)));
+            
+            if (normalizedIntensity > 0.6) {
+                targetElement.style.borderColor = "rgba(168, 85, 247, 0.9)";
+                targetElement.style.boxShadow = `0 0 14px rgba(168, 85, 247, ${normalizedIntensity * 0.7})`;
+            } else if (normalizedIntensity > 0.1) {
+                targetElement.style.borderColor = "rgba(6, 182, 212, 0.6)";
+                targetElement.style.boxShadow = `0 0 8px rgba(6, 182, 212, ${normalizedIntensity * 0.4})`;
+            } else {
+                targetElement.style.borderColor = "#3f3f46";
+                targetElement.style.boxShadow = "none";
+            }
+        }
+
+        function randomizeTensorFields() {
+            const sliderIds = ['sliderW11', 'sliderW21', 'sliderW12', 'sliderWout1'];
+            sliderIds.forEach(id => {
+                // Generate a randomized scaling weight array between -2.0 and +2.0 parameters variables
+                const arbitraryWeight = (Math.random() * 4 - 2).toFixed(1);
+                document.getElementById(id).value = arbitraryWeight;
+            });
+            runForwardPropagationPass();
+        }
+
+        // Initialize engine transformations computation sequence rules matrices parameters
+        runForwardPropagationPass();
+    </script>
+</body>
+</html>
